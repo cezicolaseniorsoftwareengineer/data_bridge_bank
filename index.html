@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataBridge Bank - Plataforma Integrada</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="databridge/frontend/style.css">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            transition: background 0.3s ease;
+        }
+        
+        .app-loader {
+            background: linear-gradient(135deg, #081f4e 0%, #0a2e70 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        .app-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #app-container {
+            min-height: 100vh;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        #app-container.loaded {
+            opacity: 1;
+        }
+        
+        .api-test-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            z-index: 1000;
+            max-width: 300px;
+            transition: all 0.3s ease;
+            transform: translateX(calc(100% - 50px));
+        }
+        
+        .api-test-panel:hover {
+            transform: translateX(0);
+        }
+        
+        .api-test-panel .handle {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #4262ff;
+            color: white;
+            padding: 10px;
+            border-radius: 5px 0 0 5px;
+            cursor: pointer;
+        }
+        
+        .api-test-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .api-test-links li {
+            margin-bottom: 10px;
+        }
+        
+        .api-test-links a {
+            display: block;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #4262ff;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .api-test-links a:hover {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader inicial -->
+    <div class="app-loader" id="app-loader">
+        <h1>DataBridge Bank</h1>
+        <div class="loader"></div>
+        <p>Carregando o sistema...</p>
+    </div>
+    
+    <!-- Container principal da aplicação -->
+    <div id="app-container"></div>
+    
+    <!-- Painel de teste da API -->
+    <div class="api-test-panel" id="api-test-panel">
+        <div class="handle">
+            <i class="fas fa-code"></i>
+        </div>
+        <h5>Links de API</h5>
+        <ul class="api-test-links">
+            <li><a href="#" data-api="/api/status" target="_blank">Status da API</a></li>
+            <li><a href="#" data-api="/api/usuarios" target="_blank">Lista de Usuários</a></li>
+            <li><a href="#" data-api="/api/transacoes" target="_blank">Transações</a></li>
+            <li><a href="#" data-api="/api/dashboard/resumo" target="_blank">Resumo Dashboard</a></li>
+        </ul>
+    </div>
+
+    <!-- Scripts Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts da aplicação -->
+    <script>
+        // Configuração da API
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000'
+            : 'https://api.databridgebank.com';
+            
+        // Páginas da aplicação
+        const PAGES = {
+            'login': 'databridge/frontend/login.html',
+            'dashboard': 'databridge/frontend/dashboard.html',
+            'clients': 'databridge/frontend/clients.html',
+            'free-insights': 'databridge/frontend/free-insights.html'
+        };
+        
+        // Estado da aplicação
+        const appState = {
+            currentPage: null,
+            userAuthenticated: false,
+            userType: null,
+            pageCache: {}
+        };
+        
+        // Função para carregar uma página
+        async function loadPage(pageName, pushHistory = true) {
+            // Verifica a autenticação
+            if (pageName !== 'login' && !appState.userAuthenticated) {
+                loadPage('login');
+                return;
+            }
+            
+            // Verifica o tipo de usuário para certas páginas
+            if (pageName === 'clients' && appState.userType !== 'client') {
+                loadPage('dashboard');
+                return;
+            }
+            
+            // Mostrar o loader
+            document.getElementById('app-loader').classList.remove('hidden');
+            
+            try {
+                // Verifica o cache primeiro
+                let content;
+                if (appState.pageCache[pageName]) {
+                    content = appState.pageCache[pageName];
+                } else {
+                    // Carrega o conteúdo da página
+                    const response = await fetch(PAGES[pageName]);
+                    const html = await response.text();
+                    
+                    // Extrai apenas o conteúdo do body
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Para a página de login, queremos o conteúdo completo do body
+                    if (pageName === 'login') {
+                        const loginContainer = doc.querySelector('.login-container');
+                        content = loginContainer ? loginContainer.outerHTML : html;
+                    } else {
+                        // Para outras páginas, pegamos a seção principal
+                        const homeSection = doc.querySelector('.home-section');
+                        content = homeSection ? homeSection.outerHTML : html;
+                    }
+                    
+                    // Armazena no cache
+                    appState.pageCache[pageName] = content;
+                }
+                
+                // Atualiza o container
+                const appContainer = document.getElementById('app-container');
+                appContainer.innerHTML = content;
+                appContainer.className = pageName === 'login' ? '' : 'loaded';
+                
+                // Adiciona a barra lateral para páginas que não são de login
+                if (pageName !== 'login') {
+                    addSidebar();
+                }
+                
+                // Atualiza o estado
+                appState.currentPage = pageName;
+                
+                // Adiciona ao histórico se necessário
+                if (pushHistory) {
+                    history.pushState({ page: pageName }, '', `#${pageName}`);
+                }
+                
+                // Inicializa scripts específicos da página
+                initPageScripts(pageName);
+                
+            } catch (error) {
+                console.error('Erro ao carregar a página:', error);
+                alert('Ocorreu um erro ao carregar a página. Por favor, tente novamente.');
+            } finally {
+                // Esconde o loader
+                setTimeout(() => {
+                    document.getElementById('app-loader').classList.add('hidden');
+                }, 500);
+            }
+        }
+        
+        // Função para adicionar a barra lateral
+        function addSidebar() {
+            // Verifica se a barra lateral já existe
+            if (document.querySelector('.sidebar')) {
+                return;
+            }
+            
+            const sidebar = document.createElement('div');
+            sidebar.className = 'sidebar';
+            sidebar.innerHTML = `
+                <div class="logo-details">
+                    <i class="fas fa-university icon"></i>
+                    <div class="logo_name">DataBridge Bank</div>
+                    <i class="fas fa-bars" id="btn"></i>
+                </div>
+                <ul class="nav-list">
+                    <li>
+                        <a href="#dashboard" class="nav-link" data-page="dashboard">
+                            <i class="fas fa-th-large"></i>
+                            <span class="links_name">Dashboard</span>
+                        </a>
+                        <span class="tooltip">Dashboard</span>
+                    </li>
+                    <li>
+                        <a href="#clients" class="nav-link" data-page="clients">
+                            <i class="fas fa-users"></i>
+                            <span class="links_name">Portal Cliente</span>
+                        </a>
+                        <span class="tooltip">Portal Cliente</span>
+                    </li>
+                    <li>
+                        <a href="#free-insights" class="nav-link" data-page="free-insights">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="links_name">Insights</span>
+                        </a>
+                        <span class="tooltip">Insights</span>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span class="links_name">Transações</span>
+                        </a>
+                        <span class="tooltip">Transações</span>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-credit-card"></i>
+                            <span class="links_name">Cartões</span>
+                        </a>
+                        <span class="tooltip">Cartões</span>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span class="links_name">Faturas</span>
+                        </a>
+                        <span class="tooltip">Faturas</span>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-comment-dollar"></i>
+                            <span class="links_name">Suporte</span>
+                        </a>
+                        <span class="tooltip">Suporte</span>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-user-cog"></i>
+                            <span class="links_name">Meu Perfil</span>
+                        </a>
+                        <span class="tooltip">Meu Perfil</span>
+                    </li>
+                    <li class="profile">
+                        <div class="profile-details">
+                            <img src="https://ui-avatars.com/api/?name=Usuário+DataBridge&background=4262ff&color=fff" alt="profileImg" id="sidebar-user-avatar">
+                            <div class="name_job">
+                                <div class="name" id="sidebar-user-name">Usuário</div>
+                                <div class="job" id="sidebar-user-role">Administrador</div>
+                            </div>
+                        </div>
+                        <i class="fas fa-sign-out-alt" id="log_out"></i>
+                    </li>
+                </ul>
+            `;
+            
+            document.body.insertBefore(sidebar, document.getElementById('app-container'));
+            
+            // Adiciona os listeners da barra lateral
+            initSidebarListeners();
+        }
+        
+        // Função para inicializar os listeners da barra lateral
+        function initSidebarListeners() {
+            // Toggle da barra lateral
+            const btn = document.querySelector('#btn');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const sidebar = document.querySelector('.sidebar');
+                    sidebar.classList.toggle('open');
+                    
+                    if (sidebar.classList.contains('open')) {
+                        btn.classList.replace('fa-bars', 'fa-times');
+                    } else {
+                        btn.classList.replace('fa-times', 'fa-bars');
+                    }
+                });
+            }
+            
+            // Links de navegação
+            const navLinks = document.querySelectorAll('.nav-link[data-page]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    loadPage(page);
+                });
+                
+                // Marca o link ativo
+                if (link.getAttribute('data-page') === appState.currentPage) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+            
+            // Botão de logout
+            const logoutBtn = document.querySelector('#log_out');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    logout();
+                });
+            }
+        }
+        
+        // Função para inicializar scripts específicos da página
+        function initPageScripts(pageName) {
+            // Scripts de login
+            if (pageName === 'login') {
+                initLoginScripts();
+            }
+            
+            // Scripts de dashboard
+            if (pageName === 'dashboard') {
+                // Inicializa componentes do dashboard
+            }
+            
+            // Scripts de clients
+            if (pageName === 'clients') {
+                // Inicializa componentes do portal do cliente
+            }
+        }
+        
+        // Scripts específicos da página de login
+        function initLoginScripts() {
+            // Alternar entre Login e Registro
+            const loginTab = document.getElementById('login-tab');
+            const registerTab = document.getElementById('register-tab');
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const formAlert = document.getElementById('form-alert');
+            
+            if (loginTab && registerTab && loginForm && registerForm) {
+                loginTab.addEventListener('click', function() {
+                    loginTab.classList.add('active');
+                    registerTab.classList.remove('active');
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    if (formAlert) {
+                        formAlert.style.display = 'none';
+                        formAlert.textContent = '';
+                    }
+                });
+                
+                registerTab.addEventListener('click', function() {
+                    registerTab.classList.add('active');
+                    loginTab.classList.remove('active');
+                    registerForm.style.display = 'block';
+                    loginForm.style.display = 'none';
+                    if (formAlert) {
+                        formAlert.style.display = 'none';
+                        formAlert.textContent = '';
+                    }
+                });
+            }
+            
+            // Processar o formulário de login
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    // Validação básica
+                    if (!username || !password) {
+                        showAlert('Por favor, preencha todos os campos.', 'danger');
+                        return;
+                    }
+                    
+                    try {
+                        // Simulação de login bem-sucedido
+                        const result = await simulateLogin(username, password);
+                        
+                        if (result.success) {
+                            // Login bem-sucedido
+                            showAlert('Login bem-sucedido! Redirecionando...', 'success');
+                            
+                            // Atualiza o estado da aplicação
+                            appState.userAuthenticated = true;
+                            appState.userType = result.userType;
+                            
+                            // Aguarda um pouco antes de redirecionar
+                            setTimeout(function() {
+                                loadPage(result.userType === 'admin' ? 'dashboard' : 'clients');
+                            }, 1000);
+                        } else {
+                            // Falha no login
+                            showAlert(result.message || 'Falha na autenticação. Verifique suas credenciais.', 'danger');
+                        }
+                    } catch (error) {
+                        console.error('Erro durante o login:', error);
+                        showAlert('Ocorreu um erro ao tentar fazer login.', 'danger');
+                    }
+                });
+            }
+            
+            // Função para exibir alertas
+            function showAlert(message, type) {
+                if (formAlert) {
+                    formAlert.textContent = message;
+                    formAlert.className = `alert alert-${type}`;
+                    formAlert.style.display = 'block';
+                    
+                    // Rolar até o alerta
+                    formAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+        
+        // Simulação de funções de autenticação
+        async function simulateLogin(username, password) {
+            // Essa é uma simulação simples para desenvolvimento
+            // Na produção, isso seria uma chamada real à API
+            
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    if (username === 'admin' && password === 'admin123') {
+                        resolve({
+                            success: true,
+                            userType: 'admin',
+                            username: 'admin',
+                            name: 'Administrador DataBridge'
+                        });
+                    } else if (username === 'cliente' && password === 'cliente123') {
+                        resolve({
+                            success: true,
+                            userType: 'client',
+                            username: 'cliente',
+                            name: 'Cliente Exemplo'
+                        });
+                    } else {
+                        resolve({
+                            success: false,
+                            message: 'Credenciais inválidas. Tente com admin/admin123 ou cliente/cliente123'
+                        });
+                    }
+                }, 800);
+            });
+        }
+        
+        // Função de logout
+        function logout() {
+            // Reseta o estado da aplicação
+            appState.userAuthenticated = false;
+            appState.userType = null;
+            
+            // Redireciona para o login
+            loadPage('login');
+        }
+        
+        // Inicializa os links de teste da API
+        function initApiTestLinks() {
+            const apiLinks = document.querySelectorAll('.api-test-links a');
+            apiLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const endpoint = this.getAttribute('data-api');
+                    const fullUrl = `${API_BASE_URL}${endpoint}`;
+                    
+                    // Abre o endpoint em uma nova janela/aba
+                    window.open(fullUrl, '_blank');
+                });
+            });
+            
+            // Toggle do painel de teste da API
+            const apiPanel = document.getElementById('api-test-panel');
+            if (apiPanel) {
+                const handle = apiPanel.querySelector('.handle');
+                if (handle) {
+                    handle.addEventListener('click', function() {
+                        apiPanel.style.transform = apiPanel.style.transform === 'translateX(0px)' 
+                            ? 'translateX(calc(100% - 50px))' 
+                            : 'translateX(0px)';
+                    });
+                }
+            }
+        }
+        
+        // Função para lidar com navegação por hash
+        function handleHashNavigation() {
+            let hash = window.location.hash.substring(1);
+            
+            // Se não houver hash, carrega a página padrão (login para usuários não autenticados)
+            if (!hash || !PAGES[hash]) {
+                hash = appState.userAuthenticated ? (appState.userType === 'admin' ? 'dashboard' : 'clients') : 'login';
+            }
+            
+            loadPage(hash, false);
+        }
+        
+        // Inicializa a aplicação quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa o painel de teste da API
+            initApiTestLinks();
+            
+            // Verifica o hash atual e carrega a página apropriada
+            handleHashNavigation();
+            
+            // Adiciona listener para mudanças no hash
+            window.addEventListener('popstate', function(event) {
+                if (event.state && event.state.page) {
+                    loadPage(event.state.page, false);
+                } else {
+                    handleHashNavigation();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

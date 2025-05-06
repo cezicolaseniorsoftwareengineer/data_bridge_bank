@@ -1,0 +1,39 @@
+services:
+  # Backend API
+  - type: web
+    name: databridge-api
+    runtime: python
+    buildCommand: cd databridge && pip install -r requirements.txt
+    startCommand: cd databridge && uvicorn app.main:app --host=0.0.0.0 --port=$PORT
+    envVars:
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DB
+        value: databridge
+      - key: POSTGRES_SERVER
+        fromService:
+          type: pserv
+          name: databridge-db
+          property: host
+      - key: SECRET_KEY
+        generateValue: true
+      - key: BACKEND_CORS_ORIGINS
+        value: https://databridge-app.netlify.app
+      - key: UPLOAD_DIR
+        value: /tmp/databridge/uploads
+
+  # Banco de dados PostgreSQL
+  - type: pserv
+    name: databridge-db
+    plan: standard
+    env: docker
+    repo: https://github.com/render-examples/postgres
+    envVars:
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      - key: POSTGRES_DB
+        value: databridge

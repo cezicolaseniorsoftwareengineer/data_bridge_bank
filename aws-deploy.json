@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "frontend": {
+    "phases": {
+      "preBuild": {
+        "commands": []
+      },
+      "build": {
+        "commands": []
+      }
+    },
+    "artifacts": {
+      "baseDirectory": ".",
+      "files": [
+        "**/*"
+      ]
+    },
+    "customHeaders": [
+      {
+        "pattern": "**/*.{html,json,js,css}",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "pattern": "**/*.{jpg,jpeg,png,gif,svg,ico}",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
+        ]
+      }
+    ]
+  }
+}

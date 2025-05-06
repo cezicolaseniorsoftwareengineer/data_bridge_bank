@@ -1,0 +1,21 @@
+
+# Elastic Beanstalk Configuration
+option_settings:
+  aws:elasticbeanstalk:container:python:
+    WSGIPath: databridge/app/main:app
+  aws:elasticbeanstalk:application:environment:
+    PYTHONPATH: /var/app
+    POSTGRES_SERVER: RDS_ENDPOINT_PLACEHOLDER
+    POSTGRES_USER: RDS_USERNAME_PLACEHOLDER
+    POSTGRES_PASSWORD: RDS_PASSWORD_PLACEHOLDER
+    POSTGRES_DB: RDS_DATABASE_PLACEHOLDER
+    MONGODB_URI: MONGODB_URI_PLACEHOLDER
+    ENVIRONMENT: production
+  aws:elasticbeanstalk:environment:
+    EnvironmentType: LoadBalanced
+  aws:autoscaling:launchconfiguration:
+    InstanceType: t3.micro
+    SecurityGroups: SECURITY_GROUP_PLACEHOLDER
+  aws:autoscaling:asg:
+    MinSize: 1
+    MaxSize: 4

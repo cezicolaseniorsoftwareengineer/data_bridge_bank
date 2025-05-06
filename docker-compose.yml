@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  app:
+    build: ./databridge
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./databridge:/app
+    environment:
+      - POSTGRES_SERVER=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=databridge
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=databridge
+      - FTP_HOST=sftp
+      - FTP_PORT=22
+      - FTP_USERNAME=user
+      - FTP_PASSWORD=password
+      - UPLOAD_DIR=/tmp/databridge/uploads
+    depends_on:
+      - db
+      - mongodb
+      - sftp
+
+  db:
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=databridge
+    ports:
+      - '5432:5432'
+
+  mongodb:
+    image: mongo:6.0
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - '27017:27017'
+
+  sftp:
+    image: atmoz/sftp
+    volumes:
+      - ./sftp_data:/home/user/upload
+    ports:
+      - '2222:22'
+    command: user:password:1001
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  sftp_data:

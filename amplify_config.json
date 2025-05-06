@@ -1,0 +1,67 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "databridge-auth-role",
+      "UnauthRoleName": "databridge-unauth-role",
+      "AuthRoleArn": "arn:aws:iam::ACCOUNT_ID:role/databridge-auth-role",
+      "UnauthRoleArn": "arn:aws:iam::ACCOUNT_ID:role/databridge-unauth-role",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "databridge-deployment",
+      "StackName": "databridge-amplify-stack",
+      "StackId": "STACK_ID"
+    }
+  },
+  "api": {
+    "databridge": {
+      "service": "AppSync",
+      "output": {
+        "authConfig": {
+          "defaultAuthentication": {
+            "authenticationType": "API_KEY"
+          }
+        }
+      }
+    },
+    "restapi": {
+      "service": "API Gateway",
+      "paths": {
+        "/api": {
+          "lambdaFunction": "databridgeFunction"
+        }
+      }
+    }
+  },
+  "function": {
+    "databridgeFunction": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "storage",
+          "resourceName": "databridgedb",
+          "attributes": [
+            "Name"
+          ]
+        }
+      ]
+    }
+  },
+  "storage": {
+    "databridgedb": {
+      "service": "RDS",
+      "providerPlugin": "awscloudformation",
+      "engine": "postgres",
+      "engineVersion": "14.6",
+      "instanceClass": "db.t3.micro",
+      "storagetype": "gp2",
+      "allocatedstorage": 20,
+      "name": "databridge",
+      "username": "dbadmin"
+    },
+    "databridgestorage": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation"
+    }
+  }
+}

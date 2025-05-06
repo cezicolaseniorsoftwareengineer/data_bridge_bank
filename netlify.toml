@@ -1,0 +1,26 @@
+[build]
+  # Diretório que contém os arquivos a serem publicados (deixe vazio para usar a raiz)
+  publish = "."
+  
+  # Comando de build (deixe vazio se não precisar compilar)
+  command = ""
+
+# Redirecionamentos e reescritas
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+[build.environment]
+  # Variáveis de ambiente para o build
+  NODE_VERSION = "18"
+
+# Headers personalizados para melhorar segurança e performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"

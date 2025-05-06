@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "databridge/app/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "databridge/app/main.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "."
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "DataBridge Bank Infrastructure",
+  "Parameters": {
+    "DBPassword": {
+      "NoEcho": "true",
+      "Description": "PostgreSQL database password",
+      "Type": "String",
+      "MinLength": "8",
+      "MaxLength": "41",
+      "AllowedPattern": "[a-zA-Z0-9]*",
+      "ConstraintDescription": "must contain only alphanumeric characters"
+    }
+  },
+  "Resources": {
+    "PostgreSQLInstance": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "AllocatedStorage": "20",
+        "DBInstanceClass": "db.t3.micro",
+        "Engine": "postgres",
+        "EngineVersion": "14.6",
+        "MasterUsername": "dbadmin",
+        "MasterUserPassword": {
+          "Ref": "DBPassword"
+        },
+        "DBName": "databridge",
+        "PubliclyAccessible": true
+      }
+    },
+    "DataBridgeFrontendBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "PublicRead",
+        "WebsiteConfiguration": {
+          "IndexDocument": "index.html",
+          "ErrorDocument": "error.html"
+        }
+      }
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Id": "PublicReadPolicy",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "DataBridgeFrontendBucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "DataBridgeFrontendBucket"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "WebsiteURL": {
+      "Description": "URL for the DataBridge frontend",
+      "Value": {
+        "Fn::GetAtt": [
+          "DataBridgeFrontendBucket",
+          "WebsiteURL"
+        ]
+      }
+    },
+    "PostgreSQLEndpoint": {
+      "Description": "Endpoint of the PostgreSQL database",
+      "Value": {
+        "Fn::GetAtt": [
+          "PostgreSQLInstance",
+          "Endpoint.Address"
+        ]
+      }
+    }
+  }
+}

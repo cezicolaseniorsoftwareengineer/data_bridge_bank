@@ -1,0 +1,96 @@
+{
+  "provider": {
+    "aws": {
+      "region": "us-east-1"
+    }
+  },
+  "resource": {
+    "aws_db_instance": {
+      "databridge_postgres": {
+        "allocated_storage": 20,
+        "engine": "postgres",
+        "engine_version": "14.6",
+        "instance_class": "db.t3.micro",
+        "name": "databridge",
+        "username": "dbadmin",
+        "password": "${var.db_password}",
+        "parameter_group_name": "default.postgres14",
+        "skip_final_snapshot": true,
+        "publicly_accessible": true
+      }
+    },
+    "aws_s3_bucket": {
+      "databridge_frontend": {
+        "bucket": "databridge-frontend",
+        "acl": "public-read",
+        "website": {
+          "index_document": "index.html",
+          "error_document": "error.html"
+        }
+      }
+    },
+    "aws_elastic_beanstalk_application": {
+      "databridge_api": {
+        "name": "databridge-api",
+        "description": "DataBridge API Application"
+      }
+    },
+    "aws_elastic_beanstalk_environment": {
+      "databridge_api_env": {
+        "name": "databridge-api-env",
+        "application": "${aws_elastic_beanstalk_application.databridge_api.name}",
+        "solution_stack_name": "64bit Amazon Linux 2 v3.5.0 running Python 3.9",
+        "setting": [
+          {
+            "namespace": "aws:autoscaling:launchconfiguration",
+            "name": "InstanceType",
+            "value": "t3.micro"
+          },
+          {
+            "namespace": "aws:elasticbeanstalk:application:environment",
+            "name": "POSTGRES_SERVER",
+            "value": "${aws_db_instance.databridge_postgres.address}"
+          },
+          {
+            "namespace": "aws:elasticbeanstalk:application:environment",
+            "name": "POSTGRES_USER",
+            "value": "${aws_db_instance.databridge_postgres.username}"
+          },
+          {
+            "namespace": "aws:elasticbeanstalk:application:environment",
+            "name": "POSTGRES_PASSWORD",
+            "value": "${var.db_password}"
+          },
+          {
+            "namespace": "aws:elasticbeanstalk:application:environment",
+            "name": "POSTGRES_DB",
+            "value": "${aws_db_instance.databridge_postgres.name}"
+          },
+          {
+            "namespace": "aws:elasticbeanstalk:application:environment",
+            "name": "ENVIRONMENT",
+            "value": "production"
+          }
+        ]
+      }
+    }
+  },
+  "output": {
+    "postgres_endpoint": {
+      "value": "${aws_db_instance.databridge_postgres.endpoint}"
+    },
+    "api_endpoint": {
+      "value": "${aws_elastic_beanstalk_environment.databridge_api_env.cname}"
+    },
+    "frontend_url": {
+      "value": "${aws_s3_bucket.databridge_frontend.website_endpoint}"
+    }
+  },
+  "variable": {
+    "db_password": {
+      "description": "PostgreSQL master password",
+      "type": "string",
+      "sensitive": true
+    }
+  }
+}

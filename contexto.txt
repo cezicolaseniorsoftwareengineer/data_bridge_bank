@@ -1,0 +1,65 @@
+APLICAÇÃO PARA ENTREVISTA BANK Internacional
+ PROMPT ULTRA MODERNO PARA CLAUDE SONNET 3.7
+
+Você é um engenheiro de software sênior com foco extremo em tecnologias modernas, arquitetura escalável e segurança avançada. Preciso que você crie um projeto completo chamado **Data Bridge Bank**, voltado para uso por um grande banco internacional.
+
+Este projeto será uma **API financeira RESTful (e opcionalmente GraphQL)** baseada em **Python 3.12+ com FastAPI**, seguindo as melhores práticas de engenharia de software global. A aplicação terá como objetivo atuar como uma *ponte inteligente de dados financeiros*, recebendo, transformando, roteando e analisando transações bancárias em tempo real.
+
+### Requisitos Técnicos (Backend):
+- Linguagem: Python 3.12+
+- Framework principal: FastAPI
+- GraphQL (via Strawberry ou Ariadne)
+- Banco de dados principal: PostgreSQL (com uso de stored procedures, views e triggers via sqlalchemy.text + asyncpg)
+- NoSQL auxiliar: MongoDB (via Motor)
+- ORM: SQLAlchemy 2.0 async + Alembic
+- FTP assíncrono: aioftp
+- Parser de arquivos posicionais: construct ou pandas com schema fixo
+- Protocolo FIX (via integração com QuickFIX/J e py4j)
+- Mensageria: Apache Kafka para pub/sub + Redis Streams para baixa latência
+- SOAP: zeep ou httpx + xmltodict
+- Testes automatizados com: pytest, pytest-asyncio, httpx e cobertura com pytest-cov
+- Serialização e validação: Pydantic (v2 preferencial)
+- Logs estruturados com loguru
+- Observabilidade: Prometheus + Grafana + Loki
+- CI/CD com GitHub Actions
+- Docker + Docker Compose
+- Deploy no Render para backend
+- Autenticação JWT com refresh token + middleware de segurança
+- Estrutura com Design Patterns (Repository, Service Layer, Factory, Strategy, DTO)
+
+### Segurança:
+- Total conformidade com OWASP
+- Prevenção de SQL injection, XSS, CSRF
+- Headers de segurança, CORS controlado
+- Sanitização de entrada de dados
+
+### REST Endpoints:
+- /clients → CRUD de clientes
+- /transactions → CRUD + roteamento inteligente
+- /insights → Geração de insights financeiros inteligentes com base nas transações
+- /ftp → Recebimento e ingestão de arquivos posicionais bancários
+- /fix → Integração com protocolo FIX para operações de trading de alto valor
+
+### Extras:
+- Documentação completa no README.md:
+  - Instalação local (venv, poetry ou pip)
+  - Como rodar com Docker
+  - Deploy na Render e Netlify
+  - Diagrama de arquitetura
+  - Fluxo de autenticação
+  - Exemplos de requisições REST/GraphQL
+- Testes automatizados
+- Internacionalização (EN)
+- Código ultra limpo e bem documentado
+- Frontend ultra moderno em html, css, javascript, com TailwindCSs, TanStack Query, consumo da API via REST e GraphQL, deploy no Netlify
+
+
+
+Crie o projeto com foco em uso real, pronto para produção, com visão de longo prazo.
+
+
+A função específica que esta aplicação resolve é:
+
+Servir como uma ponte bancária inteligente e segura para ingestão, roteamento, transformação e análise em tempo real de dados transacionais bancários, operando com alto desempenho, segurança e rastreabilidade — com potencial de se tornar um middleware financeiro universal.
+
+Ela consolida múltiplos protocolos (REST, GraphQL, FIX, FTP, SOAP), garante conformidade com padrões bancários, e se integra de forma eficiente a sistemas legados e modernos — tudo com foco em observabilidade extrema, escalabilidade elástica, segurança corporativa e inteligência de negócio integrada.
