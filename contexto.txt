@@ -1,65 +1,77 @@
-APLICAÇÃO PARA ENTREVISTA BANK Internacional
- PROMPT ULTRA MODERNO PARA CLAUDE SONNET 3.7
+Resumo do Contexto do Projeto
 
-Você é um engenheiro de software sênior com foco extremo em tecnologias modernas, arquitetura escalável e segurança avançada. Preciso que você crie um projeto completo chamado **Data Bridge Bank**, voltado para uso por um grande banco internacional.
+Estamos desenvolvendo uma aplicação financeira segura e escalável para um banco americano de médio porte. O sistema será baseado em microserviços, com foco em contas, transações e cartões, e seguirá as regulamentações dos EUA (SOX, PCI-DSS).
 
-Este projeto será uma **API financeira RESTful (e opcionalmente GraphQL)** baseada em **Python 3.12+ com FastAPI**, seguindo as melhores práticas de engenharia de software global. A aplicação terá como objetivo atuar como uma *ponte inteligente de dados financeiros*, recebendo, transformando, roteando e analisando transações bancárias em tempo real.
+Objetivos da aplicação:
 
-### Requisitos Técnicos (Backend):
-- Linguagem: Python 3.12+
-- Framework principal: FastAPI
-- GraphQL (via Strawberry ou Ariadne)
-- Banco de dados principal: PostgreSQL (com uso de stored procedures, views e triggers via sqlalchemy.text + asyncpg)
-- NoSQL auxiliar: MongoDB (via Motor)
-- ORM: SQLAlchemy 2.0 async + Alembic
-- FTP assíncrono: aioftp
-- Parser de arquivos posicionais: construct ou pandas com schema fixo
-- Protocolo FIX (via integração com QuickFIX/J e py4j)
-- Mensageria: Apache Kafka para pub/sub + Redis Streams para baixa latência
-- SOAP: zeep ou httpx + xmltodict
-- Testes automatizados com: pytest, pytest-asyncio, httpx e cobertura com pytest-cov
-- Serialização e validação: Pydantic (v2 preferencial)
-- Logs estruturados com loguru
-- Observabilidade: Prometheus + Grafana + Loki
-- CI/CD com GitHub Actions
-- Docker + Docker Compose
-- Deploy no Render para backend
-- Autenticação JWT com refresh token + middleware de segurança
-- Estrutura com Design Patterns (Repository, Service Layer, Factory, Strategy, DTO)
+    Abrir e gerenciar contas
 
-### Segurança:
-- Total conformidade com OWASP
-- Prevenção de SQL injection, XSS, CSRF
-- Headers de segurança, CORS controlado
-- Sanitização de entrada de dados
+    Realizar transferências, consultar extratos e fazer pagamentos
 
-### REST Endpoints:
-- /clients → CRUD de clientes
-- /transactions → CRUD + roteamento inteligente
-- /insights → Geração de insights financeiros inteligentes com base nas transações
-- /ftp → Recebimento e ingestão de arquivos posicionais bancários
-- /fix → Integração com protocolo FIX para operações de trading de alto valor
+    Controlar cartões de crédito e débito
 
-### Extras:
-- Documentação completa no README.md:
-  - Instalação local (venv, poetry ou pip)
-  - Como rodar com Docker
-  - Deploy na Render e Netlify
-  - Diagrama de arquitetura
-  - Fluxo de autenticação
-  - Exemplos de requisições REST/GraphQL
-- Testes automatizados
-- Internacionalização (EN)
-- Código ultra limpo e bem documentado
-- Frontend ultra moderno em html, css, javascript, com TailwindCSs, TanStack Query, consumo da API via REST e GraphQL, deploy no Netlify
+    Enviar notificações e autenticar com dois fatores
 
+    Integrar com serviços externos (ex: FedNow, Plaid)
 
+Participantes principais:
 
-Crie o projeto com foco em uso real, pronto para produção, com visão de longo prazo.
+    Product Owner, Compliance, Engenharia, DevOps e Segurança
 
+Arquitetura:
 
-A função específica que esta aplicação resolve é:
+    Hexagonal, com separação clara entre domínio e infraestrutura
 
-Servir como uma ponte bancária inteligente e segura para ingestão, roteamento, transformação e análise em tempo real de dados transacionais bancários, operando com alto desempenho, segurança e rastreabilidade — com potencial de se tornar um middleware financeiro universal.
+    Baseada em TDD, DDD e princípios SOLID
 
-Ela consolida múltiplos protocolos (REST, GraphQL, FIX, FTP, SOAP), garante conformidade com padrões bancários, e se integra de forma eficiente a sistemas legados e modernos — tudo com foco em observabilidade extrema, escalabilidade elástica, segurança corporativa e inteligência de negócio integrada.
+Camadas:
+
+    Apresentação (API REST/GraphQL)
+
+    Aplicação (casos de uso)
+
+    Domínio (regras de negócio)
+
+    Infraestrutura (persistência, integrações, notificações)
+
+Tecnologias:
+
+    Java ou Kotlin com Spring Boot
+
+    PostgreSQL, Redis, Kafka
+
+    Testes com JUnit, Mockito, Testcontainers
+
+    CI/CD com GitHub Actions, Docker, Terraform na AWS
+
+    Monitoramento com Prometheus, Grafana e ELK
+
+Testes com TDD:
+
+    Testes unitários, de integração e ponta a ponta
+
+Contextos principais:
+
+    Accounts, Transactions, Cards, Users, Notifications
+
+Regras de negócio:
+
+    Impedir transferências sem saldo
+
+    Verificar identidade na criação de contas
+
+    Bloquear cartão após três erros de senha
+
+    Alertar operações suspeitas
+
+Segurança:
+
+    OAuth 2.0, OpenID Connect, criptografia, auditoria e varredura contínua
+
+Primeiras entregas:
+
+    MVP com contas, transações e usuários
+
+    Pipeline de CI/CD
+
+    Monitoramento básico
